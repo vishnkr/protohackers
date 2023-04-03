@@ -20,11 +20,22 @@ async fn main() {
 async fn handle_conn(mut stream:TcpStream){
     //read
     let mut buffer = [0;1024];
-    let len = stream.read(&mut buffer).await.unwrap();
+    let len = match stream.read(&mut buffer).await{
+        Ok(n) if n==0 => return,
+        Ok(n) =>n,
+        Err(e) =>{
+            println!("failed to read from socket: {}",e);
+            return;
+        }
+    };
     let message = String::from_utf8_lossy(&buffer[..len]);
     println!("Received: {}",message);
 
     //write
-    let _ = stream.write_all(&buffer[..len]).await;
+    
+    if let Err(e) = stream.write_all(&buffer[..len]).await{
+        println!("failed to write to socket:{}",e);
+        return;
+    }
     println!("sent {}",message);
 }   
